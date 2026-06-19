@@ -1,0 +1,35 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: pitchpulse
+      POSTGRES_PASSWORD: pitchpulse123
+      POSTGRES_DB: pitchpulse
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    ports:
+      - "4039:4039"
+    environment:
+      DATABASE_URL: postgresql://pitchpulse:pitchpulse123@postgres:5432/pitchpulse?schema=public
+      JWT_SECRET: pitchpulse-dev-secret
+      FRONTEND_URL: http://localhost:3039
+      PORT: 4039
+    depends_on:
+      - postgres
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3039:3039"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4039/api
+
+volumes:
+  pgdata:

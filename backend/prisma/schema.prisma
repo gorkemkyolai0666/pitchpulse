@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Studio {
+  id        String   @id @default(uuid())
+  name      String
+  address   String   @default("")
+  city      String   @default("")
+  district  String   @default("")
+  phone     String   @default("")
+  email     String   @default("")
+  taxNo     String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users        User[]
+  clients      Client[]
+  sessions     Session[]
+  deliveries   Delivery[]
+  studioRooms  StudioRoom[]
+  equipment    Equipment[]
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         UserRole @default(engineer)
+  specialty    String   @default("")
+  studioId     String
+  studio       Studio   @relation(fields: [studioId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum UserRole {
+  admin
+  engineer
+  producer
+  assistant
+}
+
+model Client {
+  id          String   @id @default(uuid())
+  artistName  String
+  contactName String   @default("")
+  phone       String
+  email       String   @default("")
+  genre       String   @default("")
+  city        String   @default("")
+  notes       String   @default("")
+  studioId    String
+  studio      Studio   @relation(fields: [studioId], references: [id])
+  sessions    Session[]
+  deliveries  Delivery[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum SessionType {
+  recording
+  mixing
+  mastering
+  rehearsal
+  podcast
+}
+
+enum SessionStatus {
+  scheduled
+  confirmed
+  in_progress
+  completed
+  cancelled
+  no_show
+}
+
+model Session {
+  id            String        @id @default(uuid())
+  date          DateTime
+  duration      Int           @default(120)
+  type          SessionType   @default(recording)
+  status        SessionStatus @default(scheduled)
+  notes         String        @default("")
+  engineerName  String        @default("")
+  clientId      String
+  client        Client        @relation(fields: [clientId], references: [id])
+  studioRoomId  String?
+  studioRoom    StudioRoom?   @relation(fields: [studioRoomId], references: [id])
+  studioId      String
+  studio        Studio        @relation(fields: [studioId], references: [id])
+  deliveries    Delivery[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+enum DeliveryStatus {
+  quoted
+  in_progress
+  review
+  delivered
+  cancelled
+}
+
+enum DeliveryType {
+  mix
+  master
+  stems
+  demo
+  podcast_edit
+}
+
+model Delivery {
+  id            String         @id @default(uuid())
+  title         String         @default("")
+  type          DeliveryType   @default(mix)
+  status        DeliveryStatus @default(quoted)
+  totalPrice    Float          @default(0)
+  paidAmount    Float          @default(0)
+  dueDate       DateTime
+  deliveredDate DateTime?
+  notes         String         @default("")
+  clientId      String
+  client        Client         @relation(fields: [clientId], references: [id])
+  sessionId     String?
+  session       Session?       @relation(fields: [sessionId], references: [id])
+  studioId      String
+  studio        Studio         @relation(fields: [studioId], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+enum RoomType {
+  live
+  vocal
+  mix
+  mastering
+  podcast
+}
+
+model StudioRoom {
+  id          String   @id @default(uuid())
+  name        String
+  roomType    RoomType @default(live)
+  hourlyRate  Float    @default(1500)
+  capacity    Int      @default(4)
+  description String   @default("")
+  studioId    String
+  studio      Studio   @relation(fields: [studioId], references: [id])
+  sessions    Session[]
+  equipment   Equipment[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum EquipmentCategory {
+  microphone
+  interface
+  monitor
+  preamp
+  instrument
+  headphone
+  other
+}
+
+enum EquipmentCondition {
+  excellent
+  good
+  fair
+  needs_repair
+}
+
+model Equipment {
+  id           String             @id @default(uuid())
+  name         String
+  category     EquipmentCategory  @default(other)
+  brand        String             @default("")
+  model        String             @default("")
+  serialNumber String             @default("")
+  condition    EquipmentCondition @default(good)
+  notes        String             @default("")
+  studioRoomId String?
+  studioRoom   StudioRoom?        @relation(fields: [studioRoomId], references: [id])
+  studioId     String
+  studio       Studio             @relation(fields: [studioId], references: [id])
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+}
